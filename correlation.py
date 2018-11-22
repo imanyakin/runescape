@@ -49,7 +49,7 @@ ids = range(2000,6000,2)
 spectra = []
 for it in ids:
 	try:
-		outp = plot_spectrum(it)
+		outp = get_spectrum(it)
 		add = True
 		for i in range(len(outp)):
 
@@ -59,8 +59,8 @@ for it in ids:
 		if add:
 			spectra.append(outp)
 
-	except:
-		pass
+	except Exception,e:
+		print e
 	
 
 plt.show()
@@ -71,9 +71,14 @@ print spectra.shape
 mu = np.mean(spectra,axis=0)
 plt.plot(mu)
 plt.show()
+maxima = []
 for i in range(spectra.shape[0]):
-	plt.plot(np.array(spectra[i])-mu,alpha=0.1)
-
+	ys = np.abs(np.array(spectra[i])-mu)
+	plt.plot(ys,alpha=0.1)
+	maxima.append(np.sum(ys > 2))
 # plt.imshow(spectra)
+plt.show()
+
+plt.hist(maxima,bins = 50)
 
 plt.show()
