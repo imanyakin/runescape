@@ -45,7 +45,6 @@ def write_item_file(item_id):
 
 	
 def read_item_file(item_id):
-	x,y =get_daily(item_id)
 	with open(db_item_path.format(item_id),"r") as f:
 		data = json.loads(f.read())
 		x = data["timestamps"]
@@ -81,11 +80,48 @@ import numpy as np
 def plot_covariances(item_ids):
 	for i in range(len(item_ids)-1):
 		for j in range(i+1,len(item_ids)):
-			_,a = get_daily(item_ids[i])
-			_,b = get_daily(item_ids[j])
+			_,a = read_item_file(item_ids[i])
+			_,b = read_item_file(item_ids[j])
 			plt.plot(a,b,'x',label="{0} vs {1}".format(get_name(item_ids[i]),get_name(item_ids[j])))
 	plt.legend()
 	plt.show()
+
+def plot_autocorrelations(item_ids,show_plot=False):
+	from statsmodels.tsa.stattools import acovf#(x, unbiased=False, demean=True, fft=False, missing='none')[source]
+	if show_plot:
+		fig, ax = plt.subplots(1)
+	for i in range(len(item_ids)):
+		_,y = read_item_file(item_ids[i])
+		y = np.array(y)
+		y = (y-np.mean(y))/np.std(y)
+		acs = acovf(y) 
+		if show_plot:
+			ax.plot(acs,'o-',label=get_name(item_ids[i]))
+	
+	if show_plot:
+		ax.legend()
+		plt.show()
+	return acs
+
+def plot_crosscorrelations(item_ids):
+	from statsmodels.tsa.stattools import ccovf#(x, unbiased=False, demean=True, fft=False, missing='none')[source]
+	fig, ax = plt.subplots(1)
+	for i in range(0,len(item_ids)-1):
+		for j in range(i+1,len(item_ids)):
+			_,a = read_item_file(item_ids[i])
+			_,b = read_item_file(item_ids[j])
+			a = np.array(a)
+			b = np.array(b)
+
+			a = (a-np.mean(a))/np.std(a)
+			b = (b-np.mean(b))/np.std(b)
+
+			xcs = ccovf(a,b) 
+		ax.semilogx(xcs,label=get_name(item_ids[i])+" vs "+get_name(item_ids[j]))
+	ax.legend()
+	plt.show()
+
+
 def plot_prices(ids):
 
 	fig, ax = plt.subplots(1)
@@ -94,7 +130,7 @@ def plot_prices(ids):
 	ys = [] 
 	for i in ids:
 		x,y = get_daily(i)
-		ax.plot(x,y,'o-',label=get_name(i))
+		ax.plot(x,y,'o-',label=get_name(i)+"[{0}]".format(i))
 		y = np.asarray(y)
 		y = (y-np.mean(y))/np.std(y)
 	ax.set_xlabel("Time [epoch]")
